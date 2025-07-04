@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';  // To format the created date
+import React, { useState, useEffect } from 'react';
+import { formatDistanceToNow } from 'date-fns';
+// import useNotificationWebSocket from '../hooks/useNotificationWebSocket';
 
-const Sidebar = ({ notifications, isOpen, toggleSidebar, token }) => {
+const Sidebar = ({ notifications, isOpen, toggleSidebar, token, sendMessage, pagination }) => {
     // State for tracking selected notifications
     const [selectedNotifications, setSelectedNotifications] = useState([]);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [isReadDropdownOpen, setIsReadDropdownOpen] = useState(false);
+    const [currentPage, setCurrentPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
 
     // Function to format the created date
     const formatDate = (date) => formatDistanceToNow(new Date(date), { addSuffix: true });
@@ -65,6 +69,13 @@ const Sidebar = ({ notifications, isOpen, toggleSidebar, token }) => {
     // Check if any notification is selected to determine available dropdown options
     const hasSelectedNotifications = selectedNotifications.length > 0;
 
+    useEffect(() => {
+        if (pagination) {
+            setCurrentPage(pagination.page);
+            setTotalPages(pagination.total_pages);
+        }
+    }, [pagination]);
+
     return (
         <>
             {/* Backdrop to dim the rest of the screen when sidebar is open */}
@@ -96,57 +107,98 @@ const Sidebar = ({ notifications, isOpen, toggleSidebar, token }) => {
                         <span className="text-gray-600">Select All</span>
                     </label>
 
-                    {/* Dropdown Button */}
-                    <div className="relative">
-                        <button
-                            onClick={() => setIsDropdownOpen((prev) => !prev)}
-                            type="button"
-                            className="px-3 py-2 text-xs font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-600"
-                        >
-                            Actions
-                        </button>
+                    <div className='flex items-center space-x-2'>
+                        {/* Dropdown Button */}
+                        <div>
+                            <button
+                                onClick={() => setIsDropdownOpen((prev) => !prev)}
+                                type="button"
+                                className="px-3 py-2 text-xs font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-600"
+                            >
+                                Actions
+                            </button>
 
-                        {isDropdownOpen && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                                <ul className="py-2">
-                                    {/* Show Mark All Options if No Notifications Selected */}
-                                    {!hasSelectedNotifications && (
-                                        <>
-                                            <li
-                                                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
-                                                onClick={() => handleAction('MARK_ALL_AS_READ')}
-                                            >
-                                                Mark All As Read
-                                            </li>
-                                            <li
-                                                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
-                                                onClick={() => handleAction('REMOVED_ALL')}
-                                            >
-                                                Remove All
-                                            </li>
-                                        </>
-                                    )}
+                            {isDropdownOpen && (
+                                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                                    <ul className="py-2">
+                                        {/* Show Mark All Options if No Notifications Selected */}
+                                        {!hasSelectedNotifications && (
+                                            <>
+                                                <li
+                                                    className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                                                    onClick={() => handleAction('MARK_ALL_AS_READ')}
+                                                >
+                                                    Mark All As Read
+                                                </li>
+                                                <li
+                                                    className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                                                    onClick={() => handleAction('REMOVED_ALL')}
+                                                >
+                                                    Remove All
+                                                </li>
+                                            </>
+                                        )}
 
-                                    {/* Show Mark Options if Some Notifications are Selected */}
-                                    {hasSelectedNotifications && (
-                                        <>
-                                            <li
-                                                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
-                                                onClick={() => handleAction('MARK_AS_READ')}
-                                            >
-                                                Mark As Read
-                                            </li>
-                                            <li
-                                                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
-                                                onClick={() => handleAction('MARK_AS_REMOVED')}
-                                            >
-                                                Mark As Removed
-                                            </li>
-                                        </>
-                                    )}
-                                </ul>
-                            </div>
-                        )}
+                                        {/* Show Mark Options if Some Notifications are Selected */}
+                                        {hasSelectedNotifications && (
+                                            <>
+                                                <li
+                                                    className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                                                    onClick={() => handleAction('MARK_AS_READ')}
+                                                >
+                                                    Mark As Read
+                                                </li>
+                                                <li
+                                                    className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                                                    onClick={() => handleAction('MARK_AS_REMOVED')}
+                                                >
+                                                    Mark As Removed
+                                                </li>
+                                            </>
+                                        )}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                        {/* Notification filter */}
+                        <div>
+                            <button
+                                onClick={() => setIsReadDropdownOpen(prev => !prev)}
+                                type="button"
+                                className="px-3 py-2 text-xs font-medium text-white bg-gray-700 rounded-lg hover:bg-gray-600"
+                            >
+                                <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" strokeWidth="2"
+                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round"
+                                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                </svg>
+                            </button>
+
+                            {isReadDropdownOpen && (
+                                <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                                    <ul className="py-2 text-sm text-gray-700">
+                                        <li
+                                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                            onClick={() => {
+                                                sendMessage({ is_read: true });
+                                                setIsReadDropdownOpen(false);
+                                            }}
+                                        >
+                                            Show Read
+                                        </li>
+                                        <li
+                                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                            onClick={() => {
+                                                sendMessage({ is_read: false });
+                                                setIsReadDropdownOpen(false);
+                                            }}
+                                        >
+                                            Show Unread
+                                        </li>
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -184,6 +236,28 @@ const Sidebar = ({ notifications, isOpen, toggleSidebar, token }) => {
                         <div className="p-4 text-gray-500">No notifications</div>
                     )}
                 </div>
+                <div className="flex justify-center items-center space-x-2 p-4">
+                    <button
+                        onClick={() => currentPage > 1 && sendMessage({ page: currentPage - 1 })}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+                    >
+                        Previous
+                    </button>
+
+                    <span className="text-sm text-gray-700">
+                        Page {currentPage} of {totalPages}
+                    </span>
+
+                    <button
+                        onClick={() => currentPage < totalPages && sendMessage({ page: currentPage + 1 })}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+                    >
+                        Next
+                    </button>
+                </div>
+
             </div>
         </>
     );

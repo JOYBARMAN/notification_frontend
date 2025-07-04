@@ -9,7 +9,7 @@ import useNotificationWebSocket from './hooks/useNotificationWebSocket';
 
 const App = ({ tokenInProps }) => {
   const [token, setToken] = useState(localStorage.getItem('access_token') || null);
-  const { notificationCount, notificationMessages } = useNotificationWebSocket(token);
+  const { notificationCount, notificationMessages, sendMessage, pagination } = useNotificationWebSocket(token);
 
   // Function to update token in App component
   const updateToken = (newToken) => {
@@ -33,7 +33,7 @@ const App = ({ tokenInProps }) => {
 
   return (
     <>
-      <Navbar notificationCount={notificationCount} notificationMessages={notificationMessages} token={token} />
+      <Navbar notificationCount={notificationCount} notificationMessages={notificationMessages} token={token} sendMessage={sendMessage} pagination={pagination} />
       <Routes>
         {/* <Route path="/" element={<LoginPage updateToken={updateToken} />} /> */}
         <Route path="/" element={<Home />} />

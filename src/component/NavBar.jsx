@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 import Sidebar from './SideBar';
 
-const Navbar = ({ notificationCount = 0, notificationMessages=[], token="" }) => {
+const Navbar = ({ notificationCount = 0, notificationMessages = [], token = "", sendMessage, pagination }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     // Function to toggle the sidebar
@@ -37,7 +37,11 @@ const Navbar = ({ notificationCount = 0, notificationMessages=[], token="" }) =>
 
                     {/* Right: Notification Icon */}
                     <div className="relative">
-                        <button onClick={toggleSidebar} className="text-gray-600 hover:text-blue-600 focus:outline-none">
+                        <button
+                            onClick={toggleSidebar}
+                            disabled={!token} // ✅ Disable if token is not present
+                            className={`text-gray-600 hover:text-blue-600 focus:outline-none ${!token ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
                             {/* Bell Icon */}
                             <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2"
                                 viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -66,6 +70,8 @@ const Navbar = ({ notificationCount = 0, notificationMessages=[], token="" }) =>
                 toggleSidebar={toggleSidebar}
                 notifications={notifications}
                 token={token}
+                sendMessage={sendMessage}
+                pagination={pagination}
             />
         </>
     );
